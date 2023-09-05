@@ -84,16 +84,16 @@ class BankAccountsApiDao extends AbstractDao implements BankAccountsApiDaoInterf
 
     private function deserializeRequestBodyIntoBankAccountModelForCrudKey(string $crudKey, ?string $requestBody): ?RequestModelInterface
     {
-        $customerModel = $this->getRequestModelClassNameFromCrudKey($crudKey);
+        $bankAccountModel = $this->getRequestModelClassNameFromCrudKey($crudKey);
 
         // Only Create and Update CRUD operations require a model to be passed to the service.
-        if ($customerModel === null) {
+        if ($bankAccountModel === null) {
             return null;
         }
 
         return $this->serializer->deserialize(
             data: $requestBody,
-            type: $customerModel,
+            type: $bankAccountModel,
             format: self::FORMAT_JSON
         );
     }
