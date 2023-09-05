@@ -3,6 +3,7 @@
 namespace App\Model\Trait;
 
 use Symfony\Component\Validator\Constraints as Assert;
+use App\Validator\Constraints as AppAssert;
 
 trait BankAccountModelTrait
 {
