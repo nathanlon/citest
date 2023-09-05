@@ -7,6 +7,10 @@ use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 use Symfony\Component\Validator\Exception\UnexpectedValueException;
 
+/**
+ * Validates whether the value is a valid MOD11.
+ * http://www.pgrocer.net/Cis51/mod11.html
+ */
 class Mod11Validator extends ConstraintValidator
 {
     private const MAX_LENGTH = 11;
