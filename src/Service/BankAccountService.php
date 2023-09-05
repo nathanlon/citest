@@ -3,8 +3,10 @@
 namespace App\Service;
 
 use App\Entity\BankAccount;
+use App\Entity\Customer;
 use App\Exception\ServiceException;
 use App\Model\Abstract\AbstractModel;
+use App\Model\Request\BankAccountModel;
 use App\Model\Request\IncomingRequestModel;
 use App\Model\Response\BankAccountCreatedModel;
 use App\Model\Response\BankAccountListModel;
@@ -12,6 +14,7 @@ use App\Model\Request\BankAccountModel as BankAccountModelRequest;
 use App\Model\Response\BankAccountModel as BankAccountModelResponse;
 use App\Model\Response\OutgoingResponseModel;
 use App\Repository\BankAccountRepository;
+use App\Repository\CustomerRepository;
 use App\Service\Abstract\AbstractService;
 use App\Service\Interface\BankAccountServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,17 +28,30 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
         protected LoggerInterface $logger,
         private EntityManagerInterface $entityManager,
         private BankAccountRepository $repository,
+        private CustomerRepository $customerRepository,
     ) {
     }
 
+    /**
+     * @throws ServiceException
+     */
     public function create(IncomingRequestModel $incomingRequestModel): OutgoingResponseModel
     {
         try {
-            $this->validateModel($incomingRequestModel);
+            $this->validateIncomingRequestModel($incomingRequestModel);
 
             $bankAccountModel = $incomingRequestModel->getModel();
 
             $bankAccountEntity = $this->createBankAccountEntityFromModel($bankAccountModel);
+
+            // blocks creation if customer id is not correct.
+            $customer = $this->findCustomerEntityFromId($bankAccountModel->getCustomerId());
+            $bankAccountEntity->setCustomer($customer);
+
+            if ($bankAccountModel->getIsPreferred()) {
+                // find if any others are preferred for this customer.
+                $this->checkPreferredBankAccountNotAlreadySetForCustomer($customer);
+            }
 
             $this->entityManager->persist($bankAccountEntity);
             $this->entityManager->flush();
@@ -47,9 +63,14 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
             $outgoingResponse = new OutgoingResponseModel();
             $outgoingResponse->setStatusCode(self::STATUS_CODE_CREATED);
             $outgoingResponse->setModel($bankAccountCreatedModel);
+        } catch (ServiceException $exception) {
+            //exception may have been thrown specifically higher up the stack (eg customer not found).
+            throw $exception;
         } catch (\Exception $exception) {
             throw new ServiceException(
                 message: 'Unable to create bank account. An error occurred while saving.',
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::DATABASE_ERROR_CODE,
                 previous: $exception
             );
         }
@@ -87,6 +108,8 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
         } catch (\Exception $exception) {
             throw new ServiceException(
                 message: 'Unable to read bank accounts. An error occurred while retrieving.',
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::UNKNOWN_ERROR_CODE,
                 previous: $exception
             );
         }
@@ -116,24 +139,13 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
     public function update(IncomingRequestModel $incomingRequestModel): OutgoingResponseModel
     {
         $bankAccountEntity = $this->getBankAccountEntityFromModel($incomingRequestModel);
+        $originalModel = $this->getRequiredModel($incomingRequestModel);
 
-        $model = $incomingRequestModel->getModel();
+        $completeModel = $this->populateMissingModelValuesFromEntity($originalModel, $bankAccountEntity);
 
-        if (!empty($model->getAccountNumber())) {
-            $bankAccountEntity->setAccountNumber($model->getAccountNumber());
-        }
-        if (!empty($model->getAccountType())) {
-            $bankAccountEntity->setAccountType($model->getAccountType());
-        }
-        if (!empty($model->getAccountName())) {
-            $bankAccountEntity->setAccountName($model->getAccountName());
-        }
-        if (!empty($model->getCurrency())) {
-            $bankAccountEntity->setCurrency($model->getCurrency());
-        }
-        if (!empty($model->getIsPreferred())) {
-            $bankAccountEntity->setIsPreferred($model->getIsPreferred());
-        }
+        $this->validateModel($completeModel);
+
+        $this->updateChangedModelValuesOntoExistingEntity($originalModel, $bankAccountEntity);
 
         $this->entityManager->flush();
 
@@ -156,6 +168,70 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
         return $outgoingResponse;
     }
 
+    /**
+     * Does not allow the customer id or id to be changed.
+     */
+    private function updateChangedModelValuesOntoExistingEntity(BankAccountModel $model, BankAccount $entity)
+    {
+        if (!empty($model->getAccountNumber())) {
+            $entity->setAccountNumber($model->getAccountNumber());
+        }
+        if (!empty($model->getAccountType())) {
+            $entity->setAccountType($model->getAccountType());
+        }
+        if (!empty($model->getAccountName())) {
+            $entity->setAccountName($model->getAccountName());
+        }
+        if (!empty($model->getCurrency())) {
+            $entity->setCurrency($model->getCurrency());
+        }
+        if (!empty($model->getIsPreferred())) {
+            $entity->setIsPreferred($model->getIsPreferred());
+        }
+    }
+
+    private function populateMissingModelValuesFromEntity(BankAccountModel $originalModel, BankAccount $entity): BankAccountModel
+    {
+        $model = clone($originalModel);
+
+        if ($model->getAccountNumber() === null) {
+            $model->setAccountNumber($entity->getAccountNumber());
+        }
+        if ($model->getAccountType() === null) {
+            $model->setAccountType($entity->getAccountType());
+        }
+        if ($model->getAccountName() === null) {
+            $model->setAccountName($entity->getAccountName());
+        }
+        if ($model->getCurrency() === null) {
+            $model->setCurrency($entity->getCurrency());
+        }
+        if ($model->getIsPreferred() === null) {
+            $model->setIsPreferred($entity->getIsPreferred());
+        }
+        if ($model->getCustomerId() === null) {
+            $model->setCustomerId($entity->getCustomer()->getId());
+        }
+        return $model;
+    }
+
+    /**
+     * @throws ServiceException
+     */
+    private function findCustomerEntityFromId(int $id): Customer
+    {
+        $customer = $this->customerRepository->find($id);
+        if ($customer === null) {
+            throw new ServiceException(
+                message: sprintf("Customer id %d was not found.", $id),
+                code: self::STATUS_CODE_NOT_FOUND,
+                internalCode: self::CUSTOMER_ID_NOT_FOUND_ERROR_CODE,
+            );
+        }
+
+        return $customer;
+    }
+
     private function createBankAccountModelFromEntity(BankAccount $bankAccountEntity): BankAccountModelResponse
     {
         $bankAccountModel = new BankAccountModelResponse();
@@ -169,7 +245,6 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
 
         return $bankAccountModel;
     }
-
 
     private function createBankAccountEntityFromModel(BankAccountModelRequest $bankAccountModel): BankAccount
     {
@@ -186,15 +261,31 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
     /**
      * @throws ServiceException
      */
-    public function getBankAccountEntityFromModel(IncomingRequestModel $incomingRequestModel): BankAccount
+    private function getBankAccountEntityFromModel(IncomingRequestModel $incomingRequestModel): BankAccount
     {
         $id = $incomingRequestModel->getRouteParameters()['id'];
 
         $bankAccountEntity = $this->repository->find($id);
 
         if ($bankAccountEntity === null) {
-            throw new ServiceException(sprintf("Bank account with id %d could not be found.", $id));
+            throw new ServiceException(
+                message: sprintf("Bank account with id %d could not be found.", $id),
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::BANK_ACCOUNT_ID_NOT_FOUND_ERROR_CODE
+            );
         }
         return $bankAccountEntity;
+    }
+
+    private function checkPreferredBankAccountNotAlreadySetForCustomer(Customer $customer)
+    {
+        $existingPreferred = $this->repository->getCustomersPreferredBankAccount($customer);
+        if ($existingPreferred !== null) {
+            throw new ServiceException(
+                message: "Customer already has a preferred bank account",
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::PREFERRED_BANK_ACCOUNT_ALREADY_SET_ERROR_CODE
+            );
+        }
     }
 }

@@ -1,11 +1,11 @@
-## CI Customer & Bank Account API
+# CI Customer & Bank Account API
 Author: Nathan O'Hanlon
 
-### Basic Details
+## Basic Details
 
 A CRUD API for customers and their bank accounts.
 
-### Running the App
+## Running the App
 
 - Check out the code from Git
 - Using PHP 8.2.5 on your local machine, install the Symfony CLI.
@@ -20,14 +20,14 @@ A CRUD API for customers and their bank accounts.
     - symfony console doctrine:query:sql 'SELECT * FROM customer'
     - symfony console doctrine:query:sql 'SELECT * FROM bank_account'
 
-### Assumptions
+## Assumptions
  - The update is using PATCH which means individual fields can be modified.
 
-### API Documentation
+## API Documentation
 
 [Documentation can be found here](https://documenter.getpostman.com/view/1541437/2s9Y5ePLCD)
 
-### Still to do
+## Still to do
 - Setting a bank account as preferred should query the database to find if the same customer
 already has a preferred bank account set. It should block saving with an error if this other account is found.
 
@@ -37,39 +37,13 @@ already has a preferred bank account set. It should block saving with an error i
 - Validation that the bank account belongs to the customer
 - Checking and wiring in the validation of the Mod11 validator (in a test)
 
-## Tests
+# Tests
 
-To run the tests, go to the / path and run:
-````
-php bin/phpunit
-````
+Because functional tests rely on the database and fixtures are not set yet, please run tests separately instead of with a bin/phpunit command directly.
 
-or if you have XDebug installed:
-````
-XDEBUG_CONFIG="idekey=PHPSTORM" bin/phpunit
-````
-In your php.ini file you will need to add:
-````
-[xdebug]
-xdebug.idekey=PHPSTORM
-xdebug.mode=debug 
-````
+## Functional Tests
 
-To only run functional tests:
-````
-XDEBUG_CONFIG="idekey=PHPSTORM" bin/phpunit tests/Functional
-````
-To only run unit tests:
-````
-XDEBUG_CONFIG="idekey=PHPSTORM" bin/phpunit tests/Unit
-````
-To run all tests:
-````
-XDEBUG_CONFIG="idekey=PHPSTORM" bin/phpunit
-````
-
-
-### Functional tests
+### Setup
 
 First create the database:
 ````
@@ -82,7 +56,66 @@ symfony console doctrine:migrations:migrate --env=test
 
 Then use the API to create entities first before querying them.
 
-## Separation of Concerns
+### Creating and finding records to use
+
+There are currently no fixtures, so we need to make some records first to run tests with, then use these
+records in environment variables for our tests to work with.
+
+For each functional test, you will need to create a customer record first:
+````
+bin/phpunit tests/Functional/Controller/CustomerApiControllerTest.php --filter create
+````
+Then find the ID of the customer (left most number) using this command:
+````
+symfony console doctrine:query:sql 'SELECT * FROM customer' --env=test
+````
+Then use this ID when creating a bank_account:
+````
+TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional/Controller/BankAccountApiControllerTest.php --filter create
+````
+Now find the new bank_account (left most number) using this command:
+````
+symfony console doctrine:query:sql 'SELECT * FROM bank_account' --env=test
+````
+
+### Running Functional Tests
+After you have found some IDs to work with (see above), you can run the functional tests using instructions below
+
+For a more specific match use the example (swapping out 2 ids and 'update'):
+````
+TEST_BANK_ACCOUNT_ID=1 TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional/Controller/BankAccountApiControllerTest.php --filter '/::update$/'
+TEST_BANK_ACCOUNT_ID=1 TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional/Controller/CustomerApiControllerTest.php --filter '/::update$/'
+````
+
+To run just the non-delete functional tests, go to the root path of the repo and run:
+````
+TEST_BANK_ACCOUNT_ID=1 TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional --testdox --filter '/::(create.*|read|readOne|update)$/'
+````
+Note: that the delete operation will wipe out the customer and bank_account record that you found.
+
+Note: Using --testdox names the tests that have run.
+
+## Unit Tests
+
+To only run unit tests:
+````
+bin/phpunit tests/Unit
+````
+
+### Tests with XDebug
+
+If you have XDebug installed, add another environment variable:
+````
+XDEBUG_CONFIG="idekey=PHPSTORM" bin/phpunit tests/Unit
+````
+In your php.ini file you will need to add:
+````
+[xdebug]
+xdebug.idekey=PHPSTORM
+xdebug.mode=debug 
+````
+
+# Separation of Concerns
 
 A lot of time was spent ensuring good separation from the Service layer so
 that versioning could occur, and the API could be swapped out for another one or a web
@@ -95,7 +128,3 @@ Controller <> DAO <> Service <> Doctrine <> Database
 The serialization of the request also took a fair amount of time to get right. I would
 probably use a tool like [API Platform](https://api-platform.com/) to add all the extras
 that are available such as ID and Resource URI detail baked in.
-
-
-
-

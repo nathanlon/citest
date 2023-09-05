@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\BankAccount;
+use App\Entity\Customer;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -19,5 +20,20 @@ class BankAccountRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, BankAccount::class);
+    }
+
+    public function getCustomersPreferredBankAccount(Customer $customer): ?BankAccount
+    {
+        //@TODO refactor to use query builder if more complex than this.
+        $bankAccounts = $this->findBy(
+            criteria: [
+                'customer' => $customer,
+                'isPreferred' => true
+            ],
+            orderBy: [],
+            limit: 1,
+            offset: 0
+        );
+        return $bankAccounts[0] ?? null;
     }
 }

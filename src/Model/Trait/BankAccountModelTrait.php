@@ -3,6 +3,7 @@
 namespace App\Model\Trait;
 
 use Symfony\Component\Validator\Constraints as Assert;
+use App\Validator\Constraints as AppAssert;
 
 trait BankAccountModelTrait
 {
@@ -13,60 +14,60 @@ trait BankAccountModelTrait
         maxMessage: "The account_number must be no more than {{ limit }} characters long."
     )]
     #[AppAssert\Mod11(message: "The account_number is invalid (MOD11 required).")]
-    private string $accountNumber;
+    private ?string $accountNumber = null;
 
     #[Assert\Choice(choices: ["ORGANIZATION", "PRIVATE"], message: "The account_type must be either ORGANIZATION or PRIVATE.")]
-    private string $accountType;
+    private ?string $accountType = null;
 
     #[Assert\NotBlank(message: "The account_name field is required.")]
-    private string $accountName;
+    private ?string $accountName = null;
 
     #[Assert\Currency(message: "The currency must be a valid 3 character currency code (ISO 4217).")]
-    private string $currency;
+    private ?string $currency = null;
 
     #[Assert\Choice(choices: [true, false], message: "The is_preferred flag must be either true or false.")]
     private ?bool $isPreferred = null;
 
     //this can be blank because it will be set in the URL when created.
     // @TODO implement grouping of APIs.
-    private int $customerId;
+    private ?int $customerId = null;
 
-    public function getAccountNumber(): string
+    public function getAccountNumber(): ?string
     {
         return $this->accountNumber;
     }
 
-    public function setAccountNumber(string $accountNumber): void
+    public function setAccountNumber(?string $accountNumber): void
     {
         $this->accountNumber = $accountNumber;
     }
 
-    public function getAccountType(): string
+    public function getAccountType(): ?string
     {
         return $this->accountType;
     }
 
-    public function setAccountType(string $accountType): void
+    public function setAccountType(?string $accountType): void
     {
         $this->accountType = $accountType;
     }
 
-    public function getAccountName(): string
+    public function getAccountName(): ?string
     {
         return $this->accountName;
     }
 
-    public function setAccountName(string $accountName): void
+    public function setAccountName(?string $accountName): void
     {
         $this->accountName = $accountName;
     }
 
-    public function getCurrency(): string
+    public function getCurrency(): ?string
     {
         return $this->currency;
     }
 
-    public function setCurrency(string $currency): void
+    public function setCurrency(?string $currency): void
     {
         $this->currency = $currency;
     }
@@ -81,12 +82,12 @@ trait BankAccountModelTrait
         $this->isPreferred = $isPreferred;
     }
 
-    public function getCustomerId(): int
+    public function getCustomerId(): ?int
     {
         return $this->customerId;
     }
 
-    public function setCustomerId(int $customerId): void
+    public function setCustomerId(?int $customerId): void
     {
         $this->customerId = $customerId;
     }

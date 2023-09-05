@@ -21,3 +21,4 @@
 ###< phpunit/phpunit ###
 tools/php-cs-fixer/vendor
 .php-cs-fixer.cache
+.DS_Store

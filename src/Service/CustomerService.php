@@ -13,6 +13,7 @@ use App\Model\Response\OutgoingResponseModel;
 use App\Repository\CustomerRepository;
 use App\Service\Abstract\AbstractService;
 use App\Service\Interface\CustomerServiceInterface;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -27,10 +28,13 @@ class CustomerService extends AbstractService implements CustomerServiceInterfac
     ) {
     }
 
+    /**
+     * @throws ServiceException
+     */
     public function create(IncomingRequestModel $incomingRequestModel): OutgoingResponseModel
     {
         try {
-            $this->validateModel($incomingRequestModel);
+            $this->validateIncomingRequestModel($incomingRequestModel);
 
             $customerModel = $incomingRequestModel->getModel();
 
@@ -49,9 +53,17 @@ class CustomerService extends AbstractService implements CustomerServiceInterfac
             $outgoingResponse = new OutgoingResponseModel();
             $outgoingResponse->setStatusCode(self::STATUS_CODE_CREATED);
             $outgoingResponse->setModel($customerCreatedModel);
+        } catch (UniqueConstraintViolationException $exception) {
+            throw new ServiceException(
+                message: 'Unable to create customer. SSN was already found.',
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::DUPLICATE_ERROR_CODE
+            );
         } catch (\Exception $exception) {
             throw new ServiceException(
                 message: 'Unable to create customer. An error occurred while saving.',
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::UNKNOWN_ERROR_CODE,
                 previous: $exception
             );
         }
@@ -59,6 +71,9 @@ class CustomerService extends AbstractService implements CustomerServiceInterfac
         return $outgoingResponse;
     }
 
+    /**
+     * @throws ServiceException
+     */
     public function read(IncomingRequestModel $incomingRequestModel): OutgoingResponseModel
     {
         try {
@@ -89,6 +104,8 @@ class CustomerService extends AbstractService implements CustomerServiceInterfac
         } catch (\Exception $exception) {
             throw new ServiceException(
                 message: 'Unable to read customers. An error occurred while retrieving.',
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::UNKNOWN_ERROR_CODE,
                 previous: $exception
             );
         }
@@ -173,7 +190,11 @@ class CustomerService extends AbstractService implements CustomerServiceInterfac
         $customerEntity = $this->repository->find($id);
 
         if ($customerEntity === null) {
-            throw new ServiceException(sprintf("Customer with id %d could not be found.", $id));
+            throw new ServiceException(
+                message: sprintf("Customer with id %d could not be found.", $id),
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::CUSTOMER_ID_NOT_FOUND_ERROR_CODE,
+            );
         }
         return $customerEntity;
     }
