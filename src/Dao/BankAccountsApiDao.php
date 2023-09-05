@@ -3,23 +3,23 @@
 namespace App\Dao;
 
 use App\Dao\Abstract\AbstractDao;
-use App\Dao\Interface\CustomersApiDaoInterface;
+use App\Dao\Interface\BankAccountsApiDaoInterface;
 use App\Exception\ServiceException;
 use App\Model\Abstract\AbstractModel;
 use App\Model\Interface\RequestModelInterface;
 use App\Model\Request\ApiRequest;
-use App\Model\Request\CustomerModel;
+use App\Model\Request\BankAccountModel;
 use App\Model\Request\IncomingRequestModel;
 use App\Model\Response\OutgoingResponseModel;
 use App\Serializer\ApiRequestSerializer;
-use App\Service\CustomerService;
+use App\Service\BankAccountService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
-class BankAccountsApiDao extends AbstractDao implements CustomersApiDaoInterface
+class BankAccountsApiDao extends AbstractDao implements BankAccountsApiDaoInterface
 {
     public function __construct(
-        private CustomerService $service,
+        private BankAccountService $service,
         private ApiRequestSerializer $serializer
     ) {
     }
@@ -78,11 +78,11 @@ class BankAccountsApiDao extends AbstractDao implements CustomersApiDaoInterface
             routeParameters: $request->attributes->get(self::ROUTER_ROUTE_PARAMS_KEY),
             requestParameters: $request->query->all(),
             crudKey: $crudKey,
-            model: $this->deserializeRequestBodyIntoCustomerModelForCrudKey($crudKey, $request->getContent())
+            model: $this->deserializeRequestBodyIntoBankAccountModelForCrudKey($crudKey, $request->getContent())
         );
     }
 
-    private function deserializeRequestBodyIntoCustomerModelForCrudKey(string $crudKey, ?string $requestBody): ?RequestModelInterface
+    private function deserializeRequestBodyIntoBankAccountModelForCrudKey(string $crudKey, ?string $requestBody): ?RequestModelInterface
     {
         $customerModel = $this->getRequestModelClassNameFromCrudKey($crudKey);
 
@@ -106,7 +106,7 @@ class BankAccountsApiDao extends AbstractDao implements CustomersApiDaoInterface
         switch ($crudKey) {
             case AbstractModel::CRUD_KEY_CREATE:
             case AbstractModel::CRUD_KEY_UPDATE:
-                return CustomerModel::class;
+                return BankAccountModel::class;
             default:
                 return null;
         }
