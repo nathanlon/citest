@@ -37,6 +37,39 @@ class BankAccountApiControllerTest extends AbstractApiControllerTest
 
     /**
      * @test
+     * NOTE: You will need to modify the TEST_CUSTOMER_ID environment variable below to a known
+     * bank account in the test db. Pass it in with the command: TEST_CUSTOMER_ID=1 bin/phpunit
+     * Use the command: symfony console doctrine:query:sql 'SELECT * FROM customer
+     */
+    public function create_when_invalid_account_number(): void
+    {
+        $customerId = $this->getBankAccountTestIdFromEnvVariables();
+
+        $client = static::createClient();
+        $client->request(method: Request::METHOD_POST,
+            uri: '/api/bank_accounts',
+            content: sprintf('{
+                "account_number": "124523",
+                "account_type": "ORGANIZATION",
+                "account_name": "savings",
+                "currency": "USD",
+                "is_preferred": false,
+                "customer_id": %d
+            }', $customerId));
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_INTERNAL_SERVER_ERROR);
+        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey("error", $arrayFromJson);
+        $errorArray = $arrayFromJson["error"];
+        $this->assertArrayHasKey("realMessage", $errorArray);
+        $this->assertEquals(
+            "There were validation errors: The account_number is invalid (MOD11 required). ",
+            $errorArray["realMessage"]
+        );
+    }
+
+    /**
+     * @test
      * To run by itself (due to readOne also being available), use a filter with exact match:
      * bin/phpunit tests/Functional/Controller/BankAccountApiControllerTest.php --filter '/::read$/'
      */
