@@ -21,7 +21,7 @@ class Customer
     #[ORM\Column(length: 50)]
     private ?string $lastName = null;
 
-    #[ORM\Column(length: 20)]
+    #[ORM\Column(length: 20, unique: true)]
     private ?string $ssn = null;
 
     #[ORM\OneToMany(mappedBy: 'customer', targetEntity: BankAccount::class, orphanRemoval: true)]

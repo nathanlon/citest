@@ -26,6 +26,45 @@ class CustomerApiControllerTest extends AbstractApiControllerTest
     }
 
     /** @test */
+    public function create_when_ssn_already_set(): void
+    {
+        $duplicateSSN = rand(100000000, 999999999);
+
+        //first request should be fine.
+        $client = static::createClient();
+        $client->request(method: Request::METHOD_POST,
+            uri: '/api/customers',
+            content: sprintf('{
+                "first_name": "John",
+                "last_name": "Doe",
+                "ssn": "%d"
+        }', $duplicateSSN));
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_CREATED);
+        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey("id", $arrayFromJson);
+
+        //second request with same SSN should fail
+        $client->request(method: Request::METHOD_POST,
+            uri: '/api/customers',
+            content: sprintf('{
+                "first_name": "John",
+                "last_name": "Doe",
+                "ssn": "%d"
+        }', $duplicateSSN));
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey("error", $arrayFromJson);
+        $errorArray = $arrayFromJson["error"];
+        $this->assertArrayHasKey("realMessage", $errorArray);
+        $this->assertEquals(
+            "Unable to create customer. SSN was already found. (Error code: 8)",
+            $errorArray["realMessage"]
+        );
+    }
+
+    /** @test */
     public function read(): void
     {
         $client = static::createClient();
