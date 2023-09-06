@@ -2,11 +2,11 @@
 
 namespace App\Tests\Functional\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Functional\Controller\Abstract\AbstractApiControllerTest;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class CustomerApiControllerTest extends WebTestCase
+class CustomerApiControllerTest extends AbstractApiControllerTest
 {
     /** @test */
     public function create(): void
@@ -35,19 +35,22 @@ class CustomerApiControllerTest extends WebTestCase
 
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
         $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
-        $this->assertArrayHasKey("id", $arrayFromJson);
-        $this->assertArrayHasKey("first_name", $arrayFromJson);
+        $this->assertArrayHasKey("customers", $arrayFromJson);
+        $this->assertGreaterThan(0,$arrayFromJson['customers']);
+        $firstCustomer = $arrayFromJson['customers'][0];
+        $this->assertAllKeysExist($firstCustomer);
     }
 
     /**
-     * @TODO Make this parameter 1 come from fixtures.
-     * NOTE: You will need to modify the $customerId value below to a known customer in the test db.
+     * @TODO Make this TEST_CUSTOMER_ID environment variable come from fixtures.
+     * NOTE: You will need to modify the TEST_CUSTOMER_ID environment variable below to a known
+     * customer in the test db. Pass it in with the command: TEST_CUSTOMER_ID=1 bin/phpunit
      * Use the command: symfony console doctrine:query:sql 'SELECT * FROM customer
      * @test
      */
     public function readOne(): void
     {
-        $customerId = 1;
+        $customerId = $this->getCustomerTestIdFromEnvVariables();
         $client = static::createClient();
         $client->request(method: Request::METHOD_GET,
             uri: '/api/customers/'.$customerId,
@@ -55,20 +58,20 @@ class CustomerApiControllerTest extends WebTestCase
 
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
         $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
-        $this->assertArrayHasKey("id", $arrayFromJson);
-        $this->assertArrayHasKey("first_name", $arrayFromJson);
+        $this->assertAllKeysExist($arrayFromJson);
     }
 
     /**
-     * @TODO Make this parameter 1 come from fixtures.
-     * Note: This is a PATCH, so only fields entered will be changed.
-     *  NOTE: You will need to modify the $customerId value below to a known customer in the test db.
-     *  Use the command: symfony console doctrine:query:sql 'SELECT * FROM customer
+     * @TODO Make this TEST_CUSTOMER_ID environment variable come from fixtures.
+     * NOTE: This is a PATCH, so only fields entered will be changed.
+     * NOTE: You will need to modify the TEST_CUSTOMER_ID environment variable below to a known
+     * customer in the test db. Pass it in with the command: TEST_CUSTOMER_ID=1 bin/phpunit
+     * Use the command: symfony console doctrine:query:sql 'SELECT * FROM customer
      * @test
      */
     public function update(): void
     {
-        $customerId = 1;
+        $customerId = $this->getCustomerTestIdFromEnvVariables();
         $client = static::createClient();
         $client->request(method: Request::METHOD_PATCH,
             uri: '/api/customers/'.$customerId,
@@ -82,14 +85,15 @@ class CustomerApiControllerTest extends WebTestCase
     }
 
     /**
-     * @TODO Make this parameter 1 come from fixtures.
-     * NOTE: You will need to modify the $customerId value below to a known customer in the test db.
+     * @TODO Make this TEST_CUSTOMER_ID environment variable come from fixtures.
+     * NOTE: You will need to modify the TEST_CUSTOMER_ID environment variable below to a known
+     * customer in the test db. Pass it in with the command: TEST_CUSTOMER_ID=1 bin/phpunit
      * Use the command: symfony console doctrine:query:sql 'SELECT * FROM customer' --env=test
      * @test
      */
     public function delete(): void
     {
-        $customerId = 1;
+        $customerId = $this->getCustomerTestIdFromEnvVariables();
 
         $client = static::createClient();
         $client->request(method: Request::METHOD_DELETE,
@@ -97,5 +101,13 @@ class CustomerApiControllerTest extends WebTestCase
         );
 
         $this->assertResponseStatusCodeSame(Response::HTTP_NO_CONTENT);
+    }
+
+    private function assertAllKeysExist(array $customer): void
+    {
+        $this->assertArrayHasKey("id", $customer);
+        $this->assertArrayHasKey("first_name", $customer);
+        $this->assertArrayHasKey("last_name", $customer);
+        $this->assertArrayHasKey("ssn", $customer);
     }
 }
