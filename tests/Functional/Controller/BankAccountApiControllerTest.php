@@ -5,6 +5,7 @@ namespace App\Tests\Functional\Controller;
 use App\Tests\Functional\Controller\Abstract\AbstractApiControllerTest;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 class BankAccountApiControllerTest extends AbstractApiControllerTest
 {
@@ -58,13 +59,9 @@ class BankAccountApiControllerTest extends AbstractApiControllerTest
             }', $customerId));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
-        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
-        $this->assertArrayHasKey("error", $arrayFromJson);
-        $errorArray = $arrayFromJson["error"];
-        $this->assertArrayHasKey("realMessage", $errorArray);
-        $this->assertEquals(
-            "There were validation errors: The account_number is invalid (MOD11 required).  (Error code: 3)",
-            $errorArray["realMessage"]
+        $this->assertErrorMessageResponse(
+            client: $client,
+            message: "There were validation errors: The account_number is invalid (MOD11 required).  (Error code: 3)"
         );
     }
 
@@ -88,13 +85,9 @@ class BankAccountApiControllerTest extends AbstractApiControllerTest
             }', $customerId));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
-        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
-        $this->assertArrayHasKey("error", $arrayFromJson);
-        $errorArray = $arrayFromJson["error"];
-        $this->assertArrayHasKey("realMessage", $errorArray);
-        $this->assertEquals(
-            "There were validation errors: The account_type must be either ORGANIZATION or PRIVATE.  (Error code: 3)",
-            $errorArray["realMessage"]
+        $this->assertErrorMessageResponse(
+            client: $client,
+            message: "There were validation errors: The account_type must be either ORGANIZATION or PRIVATE.  (Error code: 3)"
         );
     }
 
@@ -118,13 +111,9 @@ class BankAccountApiControllerTest extends AbstractApiControllerTest
             }', $customerId));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
-        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
-        $this->assertArrayHasKey("error", $arrayFromJson);
-        $errorArray = $arrayFromJson["error"];
-        $this->assertArrayHasKey("realMessage", $errorArray);
-        $this->assertEquals(
-            "Customer already has a preferred bank account (Error code: 9)",
-            $errorArray["realMessage"]
+        $this->assertErrorMessageResponse(
+            client: $client,
+            message: "Customer already has a preferred bank account (Error code: 9)"
         );
     }
 
@@ -138,6 +127,27 @@ class BankAccountApiControllerTest extends AbstractApiControllerTest
         $client = static::createClient();
         $client->request(method: Request::METHOD_GET,
             uri: '/api/bank_accounts?limit=10&offset=0',
+        );
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
+        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('bank_accounts', $arrayFromJson);
+        $bankAccounts = $arrayFromJson['bank_accounts'];
+        $this->assertAllKeysExist($bankAccounts[0]);
+    }
+
+    /**
+     * @test
+     * To run by itself (due to readOne also being available), use a filter with exact match:
+     * bin/phpunit tests/Functional/Controller/BankAccountApiControllerTest.php --filter '/::read_customers_bank_accounts$/'
+     */
+    public function read_customers_bank_accounts(): void
+    {
+        $customerId = $this->getCustomerTestIdFromEnvVariables();
+
+        $client = static::createClient();
+        $client->request(method: Request::METHOD_GET,
+            uri: sprintf('/api/customers/%d/bank_accounts?limit=10&offset=0', $customerId),
         );
 
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
@@ -165,6 +175,24 @@ class BankAccountApiControllerTest extends AbstractApiControllerTest
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
         $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
         $this->assertAllKeysExist($arrayFromJson);
+    }
+
+    /**
+     * @test
+     */
+    public function readOne_invalid_id_format(): void
+    {
+        $bankAccountId = "non-number";
+        $client = static::createClient();
+        $client->request(method: Request::METHOD_GET,
+            uri: '/api/bank_accounts/'.$bankAccountId,
+        );
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        $this->assertErrorMessageResponse(
+            client: $client,
+            message: 'No route found for "GET http://localhost/api/bank_accounts/non-number"'
+        );
     }
 
     /**

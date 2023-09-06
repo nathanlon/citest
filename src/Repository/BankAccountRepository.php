@@ -36,4 +36,30 @@ class BankAccountRepository extends ServiceEntityRepository
         );
         return $bankAccounts[0] ?? null;
     }
+
+    /**
+     * @return BankAccount[]
+     */
+    public function getBankAccounts(int $limit, int $offset, ?int $customerId = null): array
+    {
+        $criteria = $this->getCriteria($customerId);
+
+        return $this->findBy(
+            criteria: $criteria,
+            orderBy: [],
+            limit: $limit,
+            offset: $offset
+        );
+    }
+
+    private function getCriteria(?int $customerId = null): array
+    {
+        $criteria = [];
+        if ($customerId !== null) {
+            $criteria = [
+                'customer' => $customerId
+            ];
+        }
+        return $criteria;
+    }
 }

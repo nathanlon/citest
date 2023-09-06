@@ -28,19 +28,26 @@ class BankAccountApiController extends AbstractController
         return $this->dao->read($request);
     }
 
-    #[Route('/bank_accounts/{id}', name: 'api_bank_accounts_read_one', methods: ['GET'])]
+
+    #[Route('/customers/{customerId<\d+>}/bank_accounts', name: 'api_customers_bank_accounts_read', defaults: ['limit' => 10, 'offset' => 0], methods: ['GET'])]
+    public function readCustomersBankAccounts(int $customerId, Request $request): JsonResponse
+    {
+        return $this->dao->read($request);
+    }
+
+    #[Route('/bank_accounts/{id<\d+>}', name: 'api_bank_accounts_read_one', methods: ['GET'])]
     public function readOne(int $id, Request $request): JsonResponse
     {
         return $this->dao->readOne($request);
     }
 
-    #[Route('/bank_accounts/{id}', name: 'api_bank_account_update', methods: ['PATCH'])]
+    #[Route('/bank_accounts/{id<\d+>}', name: 'api_bank_account_update', methods: ['PATCH'])]
     public function update(int $id, Request $request): JsonResponse
     {
         return $this->dao->update($request);
     }
 
-    #[Route('/bank_accounts/{id}', name: 'api_bank_account_delete', methods: ['DELETE'])]
+    #[Route('/bank_accounts/{id<\d+>}', name: 'api_bank_account_delete', methods: ['DELETE'])]
     public function delete(int $id, Request $request): JsonResponse
     {
         return $this->dao->delete($request);
