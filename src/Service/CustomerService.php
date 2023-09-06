@@ -30,7 +30,7 @@ class CustomerService extends AbstractService implements CustomerServiceInterfac
     public function create(IncomingRequestModel $incomingRequestModel): OutgoingResponseModel
     {
         try {
-            $this->validateModel($incomingRequestModel);
+            $this->validateIncomingRequestModel($incomingRequestModel);
 
             $customerModel = $incomingRequestModel->getModel();
 
