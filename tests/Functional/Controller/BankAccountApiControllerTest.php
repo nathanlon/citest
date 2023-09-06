@@ -57,13 +57,73 @@ class BankAccountApiControllerTest extends AbstractApiControllerTest
                 "customer_id": %d
             }', $customerId));
 
-        $this->assertResponseStatusCodeSame(Response::HTTP_INTERNAL_SERVER_ERROR);
+        $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
         $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
         $this->assertArrayHasKey("error", $arrayFromJson);
         $errorArray = $arrayFromJson["error"];
         $this->assertArrayHasKey("realMessage", $errorArray);
         $this->assertEquals(
-            "There were validation errors: The account_number is invalid (MOD11 required). ",
+            "There were validation errors: The account_number is invalid (MOD11 required).  (Error code: 3)",
+            $errorArray["realMessage"]
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function create_when_invalid_account_type(): void
+    {
+        $customerId = $this->getBankAccountTestIdFromEnvVariables();
+
+        $client = static::createClient();
+        $client->request(method: Request::METHOD_POST,
+            uri: '/api/bank_accounts',
+            content: sprintf('{
+                "account_number": "1120",
+                "account_type": "SOMETHING_ELSE",
+                "account_name": "savings",
+                "currency": "USD",
+                "is_preferred": false,
+                "customer_id": %d
+            }', $customerId));
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey("error", $arrayFromJson);
+        $errorArray = $arrayFromJson["error"];
+        $this->assertArrayHasKey("realMessage", $errorArray);
+        $this->assertEquals(
+            "There were validation errors: The account_type must be either ORGANIZATION or PRIVATE.  (Error code: 3)",
+            $errorArray["realMessage"]
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function create_when_is_preferred_set_already(): void
+    {
+        $customerId = $this->getBankAccountTestIdFromEnvVariables();
+
+        $client = static::createClient();
+        $client->request(method: Request::METHOD_POST,
+            uri: '/api/bank_accounts',
+            content: sprintf('{
+                "account_number": "1120",
+                "account_type": "ORGANIZATION",
+                "account_name": "savings",
+                "currency": "USD",
+                "is_preferred": true,
+                "customer_id": %d
+            }', $customerId));
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey("error", $arrayFromJson);
+        $errorArray = $arrayFromJson["error"];
+        $this->assertArrayHasKey("realMessage", $errorArray);
+        $this->assertEquals(
+            "Customer already has a preferred bank account (Error code: 9)",
             $errorArray["realMessage"]
         );
     }

@@ -2,6 +2,7 @@
 
 namespace App\EventListener;
 
+use App\Exception\ServiceException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -38,6 +39,8 @@ final class ExceptionListener
             }
             $response->setStatusCode($exception->getStatusCode());
             $response->headers->replace($exceptionHeaders);
+        } else if ($exception instanceof ServiceException) {
+            $response->setStatusCode($exception->getCode());
         } else {
             $response->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
         }

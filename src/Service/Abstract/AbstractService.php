@@ -17,6 +17,8 @@ abstract class AbstractService
     protected const BANK_ACCOUNT_ID_NOT_FOUND_ERROR_CODE = 5;
     protected const DATABASE_ERROR_CODE = 6;
     protected const UNKNOWN_ERROR_CODE = 7;
+    protected const DUPLICATE_ERROR_CODE = 8;
+    protected const PREFERRED_BANK_ACCOUNT_ALREADY_SET_ERROR_CODE = 9;
 
     public const DEFAULT_LIMIT = 10;
     public const DEFAULT_OFFSET = 0;
@@ -26,6 +28,7 @@ abstract class AbstractService
     public const STATUS_CODE_OK = Response::HTTP_OK;
     public const STATUS_CODE_NOT_FOUND = Response::HTTP_NOT_FOUND;
     public const STATUS_CODE_NO_CONTENT = Response::HTTP_NO_CONTENT;
+    public const STATUS_UNPROCESSABLE_ENTITY = Response::HTTP_UNPROCESSABLE_ENTITY;
 
     protected ValidatorInterface $validator;
     protected LoggerInterface $logger;
@@ -38,7 +41,8 @@ abstract class AbstractService
 
             throw new ServiceException(
                 message: 'There were validation errors: ' . $errorsString,
-                code: self::VALIDATION_FAILED_ERROR_CODE
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::VALIDATION_FAILED_ERROR_CODE
             );
         }
     }
@@ -71,7 +75,8 @@ abstract class AbstractService
         if ($model === null) {
             throw new ServiceException(
                 message: 'There was no body for the request',
-                code: self::VALIDATION_FAILED_ERROR_CODE
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::VALIDATION_FAILED_ERROR_CODE
             );
         }
         return $model;

@@ -89,7 +89,7 @@ TEST_BANK_ACCOUNT_ID=1 TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional/Controlle
 
 To run just the non-delete functional tests, go to the root path of the repo and run:
 ````
-TEST_BANK_ACCOUNT_ID=1 TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional --testdox --filter '/::(create|read|readOne|update)$/'
+TEST_BANK_ACCOUNT_ID=1 TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional --testdox --filter '/::(create.*|read|readOne|update)$/'
 ````
 Note: that the delete operation will wipe out the customer and bank_account record that you found.
 

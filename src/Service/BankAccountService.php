@@ -32,6 +32,18 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
     ) {
     }
 
+    private function checkPreferredBankAccountNotAlreadySetForCustomer(Customer $customer)
+    {
+        $existingPreferred = $this->repository->getCustomersPreferredBankAccount($customer);
+        if ($existingPreferred !== null) {
+            throw new ServiceException(
+                message: "Customer already has a preferred bank account",
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::PREFERRED_BANK_ACCOUNT_ALREADY_SET_ERROR_CODE
+            );
+        }
+    }
+
     /**
      * @throws ServiceException
      */
@@ -47,6 +59,11 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
             // blocks creation if customer id is not correct.
             $customer = $this->findCustomerEntityFromId($bankAccountModel->getCustomerId());
             $bankAccountEntity->setCustomer($customer);
+
+            if ($bankAccountModel->getIsPreferred()) {
+                // find if any others are preferred for this customer.
+                $this->checkPreferredBankAccountNotAlreadySetForCustomer($customer);
+            }
 
             $this->entityManager->persist($bankAccountEntity);
             $this->entityManager->flush();
@@ -64,7 +81,8 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
         } catch (\Exception $exception) {
             throw new ServiceException(
                 message: 'Unable to create bank account. An error occurred while saving.',
-                code: self::DATABASE_ERROR_CODE,
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::DATABASE_ERROR_CODE,
                 previous: $exception
             );
         }
@@ -102,7 +120,8 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
         } catch (\Exception $exception) {
             throw new ServiceException(
                 message: 'Unable to read bank accounts. An error occurred while retrieving.',
-                code: self::UNKNOWN_ERROR_CODE,
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::UNKNOWN_ERROR_CODE,
                 previous: $exception
             );
         }
@@ -208,13 +227,17 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
         return $model;
     }
 
+    /**
+     * @throws ServiceException
+     */
     private function findCustomerEntityFromId(int $id): Customer
     {
         $customer = $this->customerRepository->find($id);
         if ($customer === null) {
             throw new ServiceException(
                 message: sprintf("Customer id %d was not found.", $id),
-                code: self::CUSTOMER_ID_NOT_FOUND_ERROR_CODE
+                code: self::STATUS_CODE_NOT_FOUND,
+                internalCode: self::CUSTOMER_ID_NOT_FOUND_ERROR_CODE,
             );
         }
 
@@ -259,7 +282,8 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
         if ($bankAccountEntity === null) {
             throw new ServiceException(
                 message: sprintf("Bank account with id %d could not be found.", $id),
-                code: self::BANK_ACCOUNT_ID_NOT_FOUND_ERROR_CODE
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::BANK_ACCOUNT_ID_NOT_FOUND_ERROR_CODE
             );
         }
         return $bankAccountEntity;
