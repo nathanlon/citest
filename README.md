@@ -79,7 +79,7 @@ symfony console doctrine:query:sql 'SELECT * FROM bank_account' --env=test
 ````
 
 ### Running Functional Tests
-After you have found some IDs to work with (see above), you can run the tests:
+After you have found some IDs to work with (see above), you can run the functional tests using instructions below
 
 For a more specific match use the example (swapping out 2 ids and 'update'):
 ````
@@ -87,11 +87,13 @@ TEST_BANK_ACCOUNT_ID=1 TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional/Controlle
 TEST_BANK_ACCOUNT_ID=1 TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional/Controller/CustomerApiControllerTest.php --filter '/::update$/'
 ````
 
-To run all the functional tests, go to the root path of the repo and run:
+To run just the non-delete functional tests, go to the root path of the repo and run:
 ````
-TEST_BANK_ACCOUNT_ID=1 TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional
+TEST_BANK_ACCOUNT_ID=1 TEST_CUSTOMER_ID=1 bin/phpunit tests/Functional --testdox --filter '/::(create|read|readOne|update)$/'
 ````
-Note that the delete operation will wipe out the customer and bank_account record that you found.
+Note: that the delete operation will wipe out the customer and bank_account record that you found.
+
+Note: Using --testdox names the tests that have run.
 
 ## Unit Tests
 
