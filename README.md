@@ -42,6 +42,8 @@ A CRUD API for customers and their bank accounts.
 - More abstraction of the service layer (eg: remove request & route params from IncomingRequestModel)
 - Moving the PHP server into docker (not requiring local PHP setup, symfony & composer to run)
 - Deleting of associated bank accounts when deleting a customer (untested)
+- Versioning the API - with either headers or route changes
+  - This should be simpler and was designed with this in mind, since the DAO layer can work out which version of multiple services to use.
 
 # Tests
 
