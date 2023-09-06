@@ -2,6 +2,7 @@
 
 namespace App\Tests\Functional\Controller\Abstract;
 
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class AbstractApiControllerTest extends WebTestCase
@@ -18,5 +19,17 @@ class AbstractApiControllerTest extends WebTestCase
 
     protected function getCustomerTestIdFromEnvVariables(): int {
         return (int) getenv(self::ENV_VAR_NAME_TEST_CUSTOMER_ID) ?? self::DEFAULT_TEST_CUSTOMER_ID;
+    }
+
+    protected function assertErrorMessageResponse(KernelBrowser $client, string $message): void
+    {
+        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey("error", $arrayFromJson);
+        $errorArray = $arrayFromJson["error"];
+        $this->assertArrayHasKey("realMessage", $errorArray);
+        $this->assertEquals(
+            $message,
+            $errorArray["realMessage"]
+        );
     }
 }

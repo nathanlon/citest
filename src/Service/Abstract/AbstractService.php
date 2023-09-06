@@ -3,6 +3,7 @@
 namespace App\Service\Abstract;
 
 use App\Exception\ServiceException;
+use App\Model\Abstract\AbstractModel;
 use App\Model\Interface\RequestModelInterface;
 use App\Model\Request\IncomingRequestModel;
 use Psr\Log\LoggerInterface;
@@ -80,5 +81,20 @@ abstract class AbstractService
             );
         }
         return $model;
+    }
+
+    protected function getCustomerId(IncomingRequestModel $incomingRequestModel): ?int
+    {
+        return $incomingRequestModel->getRouteParameters()[AbstractModel::ROUTE_PARAM_CUSTOMER_ID] ?? null;
+    }
+
+    protected function getLimit(IncomingRequestModel $incomingRequestModel): int
+    {
+        return $incomingRequestModel->getRequestParameters()[AbstractModel::REQUEST_PARAM_LIMIT] ?? self::DEFAULT_LIMIT;
+    }
+
+    protected function getOffset(IncomingRequestModel $incomingRequestModel): int
+    {
+        return $incomingRequestModel->getRequestParameters()[AbstractModel::REQUEST_PARAM_OFFSET] ?? self::DEFAULT_OFFSET;
     }
 }

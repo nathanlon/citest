@@ -54,13 +54,9 @@ class CustomerApiControllerTest extends AbstractApiControllerTest
         }', $duplicateSSN));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
-        $arrayFromJson = json_decode($client->getResponse()->getContent(), true);
-        $this->assertArrayHasKey("error", $arrayFromJson);
-        $errorArray = $arrayFromJson["error"];
-        $this->assertArrayHasKey("realMessage", $errorArray);
-        $this->assertEquals(
-            "Unable to create customer. SSN was already found. (Error code: 8)",
-            $errorArray["realMessage"]
+        $this->assertErrorMessageResponse(
+            client: $client,
+            message: "Unable to create customer. SSN was already found. (Error code: 8)"
         );
     }
 

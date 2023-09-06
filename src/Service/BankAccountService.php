@@ -81,16 +81,10 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
     public function read(IncomingRequestModel $incomingRequestModel): OutgoingResponseModel
     {
         try {
-            //@TODO Could put these into the read model so as to abstract these from the service.
-            $limit = $incomingRequestModel->getRequestParameters()[AbstractModel::REQUEST_PARAM_LIMIT] ?? self::DEFAULT_LIMIT;
-            $offset = $incomingRequestModel->getRequestParameters()[AbstractModel::REQUEST_PARAM_OFFSET] ?? self::DEFAULT_OFFSET;
-
-            //@TODO Would put these into queries on the Repository.
-            $bankAccountEntities = $this->repository->findBy(
-                criteria: [],
-                orderBy: [],
-                limit: $limit,
-                offset: $offset
+            $bankAccountEntities = $this->repository->getBankAccounts(
+                limit: $this->getLimit($incomingRequestModel),
+                offset: $this->getOffset($incomingRequestModel),
+                customerId: $this->getCustomerId($incomingRequestModel)
             );
 
             $bankAccountModels = [];

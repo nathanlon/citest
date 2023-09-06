@@ -16,4 +16,6 @@ class AbstractModel
 
     public const REQUEST_PARAM_LIMIT = 'limit';
     public const REQUEST_PARAM_OFFSET = 'offset';
+
+    public const ROUTE_PARAM_CUSTOMER_ID = "customerId";
 }

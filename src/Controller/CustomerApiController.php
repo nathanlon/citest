@@ -28,19 +28,19 @@ class CustomerApiController extends AbstractController
         return $this->dao->read($request);
     }
 
-    #[Route('/customers/{id}', name: 'api_customers_read_one', methods: ['GET'])]
+    #[Route('/customers/{id<\d+>}', name: 'api_customers_read_one', methods: ['GET'])]
     public function readOne(int $id, Request $request): JsonResponse
     {
         return $this->dao->readOne($request);
     }
 
-    #[Route('/customers/{id}', name: 'api_customer_update', methods: ['PATCH'])]
+    #[Route('/customers/{id<\d+>}', name: 'api_customer_update', methods: ['PATCH'])]
     public function update(int $id, Request $request): JsonResponse
     {
         return $this->dao->update($request);
     }
 
-    #[Route('/customers/{id}', name: 'api_customer_delete', methods: ['DELETE'])]
+    #[Route('/customers/{id<\d+>}', name: 'api_customer_delete', methods: ['DELETE'])]
     public function delete(int $id, Request $request): JsonResponse
     {
         return $this->dao->delete($request);
