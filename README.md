@@ -28,14 +28,9 @@ A CRUD API for customers and their bank accounts.
 [Documentation can be found here](https://documenter.getpostman.com/view/1541437/2s9Y5ePLCD)
 
 ## Still to do
-- Setting a bank account as preferred should query the database to find if the same customer
-already has a preferred bank account set. It should block saving with an error if this other account is found.
-
-- Validation on the update, and generally the bank_account endpoint is not tested to work.
 - A URL structure that has the customer within it, eg:
   - /api/customers/1/bank_accounts
 - Validation that the bank account belongs to the customer
-- Checking and wiring in the validation of the Mod11 validator (in a test)
 
 # Tests
 
@@ -117,7 +112,7 @@ xdebug.mode=debug
 
 # Separation of Concerns
 
-A lot of time was spent ensuring good separation from the Service layer so
+A priority was ensuring good separation from the Service layer so
 that versioning could occur, and the API could be swapped out for another one or a web
 interface and the service layer would not be effected.
 
@@ -125,6 +120,6 @@ Structure is basically:
 
 Controller <> DAO <> Service <> Doctrine <> Database
 
-The serialization of the request also took a fair amount of time to get right. I would
+The serialization of the request (with validation) was important too, however I would
 probably use a tool like [API Platform](https://api-platform.com/) to add all the extras
 that are available such as ID and Resource URI detail baked in.
