@@ -28,9 +28,20 @@ A CRUD API for customers and their bank accounts.
 [Documentation can be found here](https://documenter.getpostman.com/view/1541437/2s9Y5ePLCD)
 
 ## Still to do
-- A URL structure that has the customer within it, eg:
-  - /api/customers/1/bank_accounts
-- Validation that the bank account belongs to the customer
+- More unit tests
+- More functional tests
+- Fixtures to set up functional tests
+- Fixtures to load test data
+- Multiple URI based resource and HTTP verbs
+- HATEOS [See Richardson Maturity Model](https://www.geeksforgeeks.org/richardson-maturity-model-restful-api/)
+- More specific exceptions
+- Filters and Search parameters on endpoints
+- Lock down the methods on each Interface
+- More use of the Repository using Doctrine Query Buider
+- Better error messages
+- More abstraction of the service layer (eg: remove request & route params from IncomingRequestModel)
+- Moving the PHP server into docker (not requiring local PHP setup, symfony & composer to run)
+- Deleting of associated bank accounts when deleting a customer (untested)
 
 # Tests
 
