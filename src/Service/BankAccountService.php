@@ -32,18 +32,6 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
     ) {
     }
 
-    private function checkPreferredBankAccountNotAlreadySetForCustomer(Customer $customer)
-    {
-        $existingPreferred = $this->repository->getCustomersPreferredBankAccount($customer);
-        if ($existingPreferred !== null) {
-            throw new ServiceException(
-                message: "Customer already has a preferred bank account",
-                code: self::STATUS_UNPROCESSABLE_ENTITY,
-                internalCode: self::PREFERRED_BANK_ACCOUNT_ALREADY_SET_ERROR_CODE
-            );
-        }
-    }
-
     /**
      * @throws ServiceException
      */
@@ -287,5 +275,17 @@ class BankAccountService extends AbstractService implements BankAccountServiceIn
             );
         }
         return $bankAccountEntity;
+    }
+
+    private function checkPreferredBankAccountNotAlreadySetForCustomer(Customer $customer)
+    {
+        $existingPreferred = $this->repository->getCustomersPreferredBankAccount($customer);
+        if ($existingPreferred !== null) {
+            throw new ServiceException(
+                message: "Customer already has a preferred bank account",
+                code: self::STATUS_UNPROCESSABLE_ENTITY,
+                internalCode: self::PREFERRED_BANK_ACCOUNT_ALREADY_SET_ERROR_CODE
+            );
+        }
     }
 }
